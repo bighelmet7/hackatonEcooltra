@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"io"
@@ -120,12 +121,14 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	reader := bytes.NewReader(b)
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
    	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Content-Type", "application/json")
 
-	w.Write(b)
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, reader)
 }
 
 func Points(w http.ResponseWriter, req *http.Request) {
