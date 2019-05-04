@@ -21,6 +21,7 @@ type Vehicle struct {
 var (
 	baseURL          = "http://ecooltra.arnaugarcia.com"
 	vehiclesEndpoint = "/vehicles.json"
+	geoEndpoint = "/test.geojson"
 	accessToken      = "Bearer 0fb6f9fffe309680c17d6fb7203cded9a39fc5b865f36d0763211e70a9948c58"
 	maxMeters        = 65000
 )
@@ -31,7 +32,8 @@ func main() {
 	// /vehicle/<id>/ returns a single obj, print the available perimeter.
 	r := mux.NewRouter()
 	r.HandleFunc("/ping", logger(Ping))
-	r.HandleFunc("/vehicles", logger(Vehicles))
+	r.HandleFunc("/api/vehicles", logger(Vehicles))
+	r.HandleFunc("/api/geo", logger(Points))
 
 	// TODO: Add TLS and Read timeout.
 	serve := &http.Server{
@@ -116,4 +118,29 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
+}
+
+func Points(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(w, "This method it's not supported.", http.StatusMethodNotAllowed)
+		return
+	}
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	u.Path = geoEndpoint
+	resp, err := http.Get(u.String())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+   	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	io.Copy(w, resp.Body)
 }
