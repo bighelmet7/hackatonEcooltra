@@ -8,11 +8,11 @@ SERVER = "home556586389.1and1-data.host"
 USER = "u75998576-ecooltra"
 PASSWORD = "ecooltrahack"
 
-LOCAL_PATH = sys.argv[2]
+LOCAL_PATH = sys.argv[1]
 REMOTE_PATH = "/vehicles.json"
 
 
-class Connection():
+class Connection(object):
 
     def __init__(self, server, user, password, remote_path):
         self.server = SERVER
@@ -42,7 +42,7 @@ def get_vehicles():
 
     url = "https://cooltra.electricfeel.net/integrator/v1/vehicles"
 
-    data = {"system_id": sys.argv[1]}
+    data = {"system_id": sys.argv[2]}
 
     headers = {
         'Content-Type': "application/json",
