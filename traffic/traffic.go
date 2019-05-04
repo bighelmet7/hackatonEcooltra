@@ -9,9 +9,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"github.com/gorilla/mux"
 )
 
-var (
+var (	
 	authURL = "https://com-shi-va.barcelona.cat/api/auth"
 	baseURL = "https://api-com-shi-va.barcelona.cat"
 	afectacionsEndpoint = "/afectacions/"
@@ -19,13 +20,13 @@ var (
 
 func main() {
 	log.Println("Setting multiplexor")
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ping", logger(Ping))
-	mux.HandleFunc("/api/traffic", logger(Traffic))
+	m := mux.NewRouter()
+	m.HandleFunc("/ping", logger(Ping))
+	m.HandleFunc("/api/traffic", logger(Traffic))
 
 	server := &http.Server{
 		Addr:":8081",
-		Handler: mux,
+		Handler: m,
 	}
 	log.Println("Server running...")
 	log.Fatalln(server.ListenAndServe())
