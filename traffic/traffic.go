@@ -105,7 +105,6 @@ func Traffic(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	w.WriteHeader(resp.StatusCode)
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
    	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -116,6 +115,8 @@ func Traffic(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(resp.StatusCode)
 
 	reader := bytes.NewReader(body)
 	io.Copy(w, reader)
