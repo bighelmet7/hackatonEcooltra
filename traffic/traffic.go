@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"bytes"
 	"errors"
 	"encoding/json"
 	"io"
@@ -109,5 +110,12 @@ func Traffic(w http.ResponseWriter, req *http.Request) {
    	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Content-Type", "application/json")
 
-	io.Copy(w, resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	reader := bytes.NewReader(body)
+	io.Copy(w, reader)
 }
