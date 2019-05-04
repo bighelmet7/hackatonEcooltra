@@ -117,6 +117,10 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+   	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	w.Write(b)
 }
 
