@@ -1,28 +1,41 @@
 package main
 
 import (
-	"log"
-	"io"
-	"net/url"
-	"net/http"
+	"encoding/json"
 	"github.com/gorilla/mux"
+	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
 )
 
+// Vehicle payload.
+type Vehicle struct {
+	ID       string    `json:"id"`
+	Position []float64 `json:"position"`
+	Range    int64     `json:"range"`
+}
+
+// Flags needed m8
 var (
-	baseURL = "https://cooltra.electricfeel.net"
+	baseURL          = "https://cooltra.electricfeel.net"
 	vehiclesEndpoint = "/integrator/v1/vehicles"
-	accessToken = "Bearer 0fb6f9fffe309680c17d6fb7203cded9a39fc5b865f36d0763211e70a9948c58"
+	accessToken      = "Bearer 0fb6f9fffe309680c17d6fb7203cded9a39fc5b865f36d0763211e70a9948c58"
+	maxMeters        = 65000
 )
 
 func main() {
 
+	// TODO:
+	// /vehicle/<id>/ returns a single obj, print the available perimeter.
 	r := mux.NewRouter()
 	r.HandleFunc("/ping", logger(Ping))
 	r.HandleFunc("/vehicles", logger(Vehicles))
 
 	// TODO: Add TLS and Read timeout.
 	serve := &http.Server{
-		Addr: ":8080",
+		Addr:    ":8080",
 		Handler: r,
 	}
 	log.Println("Server running...")
@@ -46,16 +59,30 @@ func Ping(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "Pong\n")
 }
 
+func groupBy(vehicles []Vehicle) []Vehicle {
+	var result []Vehicle
+	// TODO: this is just for critical status only, should be more dynamic status.
+	for _, vehicle := range vehicles {
+		// critical is interpreted as the 25% of the total.
+		if vehicle.Range <= int64(maxMeters/4) {
+			result = append(result, vehicle)
+		}
+	}
+	return result
+}
+
+// Vehicles nothing special, yet.
+// TODO: add critic zones and other zones.
 func Vehicles(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(w, "This method it's not supported.", http.StatusMethodNotAllowed)
-		return 
+		return
 	}
 	cli := &http.Client{}
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return 
+		return
 	}
 	u.Path = vehiclesEndpoint
 	q := u.Query()
@@ -74,6 +101,19 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+
+	var vehicles []Vehicle
+	body, _ := ioutil.ReadAll(resp.Body)
+	if err := json.Unmarshal(body, &vehicles); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	vehiclesGroup := groupBy(vehicles)
+	b, err := json.Marshal(vehiclesGroup)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
 }
