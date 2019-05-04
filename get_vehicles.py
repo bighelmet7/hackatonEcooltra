@@ -11,6 +11,30 @@ PASSWORD = "ecooltrahack"
 LOCAL_PATH = "./vehicles.json"
 REMOTE_PATH = "/vehicles.json"
 
+class Connection():
+
+	def __init__(self, server, user,
+							password, remote_path):
+		self.server = SERVER
+		self.user = USER
+		self.password = PASSWORD
+		self.remote_path = REMOTE_PATH
+	
+	def __enter__(self):
+		self.ssh = paramiko.SSHClient() 
+		self.ssh.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
+		self.ssh.connect(self.server, username=self.user, password=self.password)
+		self.sftp = self.ssh.open_sftp()
+
+		return self
+	
+	def __exit__(self, *args):
+		self.sftp.close()
+		self.ssh.close()
+
+	def save_vehicles(self):
+		self.sftp.put(LOCAL_PATH, self.remote_path)
+
 
 def get_vehicles():
 
@@ -32,30 +56,33 @@ def get_vehicles():
 
 	return 'Error'
 
-def connect_ssh_sftp():
-	ssh = paramiko.SSHClient() 
-	ssh.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
-	ssh.connect(SERVER, username=USER, password=PASSWORD)
-	sftp = ssh.open_sftp()
+# def connect_ssh_sftp():
+# 	ssh = paramiko.SSHClient() 
+# 	ssh.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
+# 	ssh.connect(SERVER, username=USER, password=PASSWORD)
+# 	sftp = ssh.open_sftp()
 
-	return ssh, sftp
+# 	return ssh, sftp
 
-def close_ssh_sftp_close(sftp, ssh):
-	sftp.close()
-	ssh.close()
+# def close_ssh_sftp_close(sftp, ssh):
+# 	sftp.close()
+# 	ssh.close()
 
-def save_vehicles(sftp):
-	sftp.put(LOCAL_PATH, REMOTE_PATH)
+# def save_vehicles(sftp):
+# 	sftp.put(LOCAL_PATH, REMOTE_PATH)
 
 def main():
 	vehicles = get_vehicles()
 	with open(LOCAL_PATH, "w") as file_vehicles:
 		file_vehicles.write(vehicles)
+
+		with Connection(SERVER, USER, PASSWORD, REMOTE_PATH) as connection:
+			connection.save_vehicles()
 	
-	ssh, sftp = connect_ssh_sftp()
+	# ssh, sftp = connect_ssh_sftp()
 	
-	save_vehicles(sftp)
-	close_ssh_sftp_close(sftp, ssh)
+	# save_vehicles(sftp)
+	# close_ssh_sftp_close(sftp, ssh)
 
 if __name__ == "__main__":
 	main()
