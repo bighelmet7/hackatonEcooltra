@@ -83,7 +83,7 @@ def get_vehicles(city):
 def main():
     args = get_args()
 
-    local_path = args.path[0]
+    local_path = args.path
     city = args.city
 
     vehicles = get_vehicles(city)
