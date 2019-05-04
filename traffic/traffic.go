@@ -104,5 +104,10 @@ func Traffic(w http.ResponseWriter, req *http.Request) {
 	}
 	defer resp.Body.Close()
 	w.WriteHeader(resp.StatusCode)
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+   	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Content-Type", "application/json")
+
 	io.Copy(w, resp.Body)
 }
