@@ -19,8 +19,8 @@ type Vehicle struct {
 
 // Flags needed m8
 var (
-	baseURL          = "https://cooltra.electricfeel.net"
-	vehiclesEndpoint = "/integrator/v1/vehicles"
+	baseURL          = "http://ecooltra.arnaugarcia.com"
+	vehiclesEndpoint = "/vehicles.json"
 	accessToken      = "Bearer 0fb6f9fffe309680c17d6fb7203cded9a39fc5b865f36d0763211e70a9948c58"
 	maxMeters        = 65000
 )
