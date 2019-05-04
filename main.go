@@ -18,13 +18,12 @@ type Vehicle struct {
 	Range    int64     `json:"range"`
 }
 
-// Flags needed m8
+// This is just available for Barcelona
+const maxMeters = 70000
+
 var (
 	baseURL          = "http://ecooltra.arnaugarcia.com"
 	vehiclesEndpoint = "/vehicles.json"
-	geoEndpoint = "/test.geojson"
-	accessToken      = "Bearer 0fb6f9fffe309680c17d6fb7203cded9a39fc5b865f36d0763211e70a9948c58"
-	maxMeters        = 65000
 )
 
 func main() {
@@ -34,7 +33,6 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/ping", logger(Ping))
 	r.HandleFunc("/api/vehicles", logger(Vehicles))
-	r.HandleFunc("/api/geo", logger(Points))
 
 	// TODO: Add TLS and Read timeout.
 	serve := &http.Server{
@@ -78,8 +76,7 @@ type Data struct {
 	Results []Vehicle `json:"results"`
 }
 
- // Vehicles nothing special, yet.
-// TODO: add critic zones and other zones.
+// Vehicles nothing special, yet.
 func Vehicles(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(w, "This method it's not supported.", http.StatusMethodNotAllowed)
@@ -98,7 +95,6 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	nReq.Header.Add("Content-Type", "application/json")
-	nReq.Header.Add("Authorization", accessToken)
 	resp, err := cli.Do(nReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -112,9 +108,9 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	vehiclesGroup := groupBy(vehicles)
+	// vehiclesGroup := groupBy(vehicles)
 	results := Data{
-		Results: vehiclesGroup,
+		Results: vehicles,
 	}
 	b, err := json.Marshal(results)
 	if err != nil {
@@ -129,29 +125,4 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, reader)
-}
-
-func Points(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
-		http.Error(w, "This method it's not supported.", http.StatusMethodNotAllowed)
-		return
-	}
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	u.Path = geoEndpoint
-	resp, err := http.Get(u.String())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-   	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	io.Copy(w, resp.Body)
 }
