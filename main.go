@@ -73,7 +73,11 @@ func groupBy(vehicles []Vehicle) []Vehicle {
 	return result
 }
 
-// Vehicles nothing special, yet.
+type Data struct {
+	Results []Vehicle `json:"results"`
+}
+
+ // Vehicles nothing special, yet.
 // TODO: add critic zones and other zones.
 func Vehicles(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
@@ -87,9 +91,6 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	u.Path = vehiclesEndpoint
-	q := u.Query()
-	q.Set("system_id", "barcelona")
-	u.RawQuery = q.Encode()
 	nReq, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -111,7 +112,10 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	vehiclesGroup := groupBy(vehicles)
-	b, err := json.Marshal(vehiclesGroup)
+	results := Data{
+		Results: vehiclesGroup,
+	}
+	b, err := json.Marshal(results)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
