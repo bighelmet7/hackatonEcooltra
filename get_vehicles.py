@@ -12,6 +12,10 @@ LOCAL_PATH = sys.argv[1]
 REMOTE_PATH = "/vehicles.json"
 
 
+class ScrapperException(Exception):
+    pass
+
+
 class Connection(object):
 
     def __init__(self, server, user, password, remote_path):
@@ -56,11 +60,12 @@ def get_vehicles():
     if response:
         return response.text
 
-    return 'Error'
+        raise ScrapperException('No se ha conseguido una respuesta')
 
 
 def main():
     vehicles = get_vehicles()
+
     with open(LOCAL_PATH, "w") as file_vehicles:
         file_vehicles.write(vehicles)
 
