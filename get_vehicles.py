@@ -47,9 +47,9 @@ def create_parse_arguments():
     parser = argparse.ArgumentParser(
         description='Usage'
     )
-    parser.add_argument('--path', nargs='+', help='Local JSON file path')
+    parser.add_argument('--path', help='Local JSON file path', required=True)
     parser.add_argument('--city', default='barcelona',
-                        help='City to get vehicles')
+                        help='City to get vehicles', required=False)
 
     return parser
 
@@ -85,7 +85,6 @@ def main():
 
     local_path = args.path[0]
     city = args.city
-    # print(local_path, city)
 
     vehicles = get_vehicles(city)
 
