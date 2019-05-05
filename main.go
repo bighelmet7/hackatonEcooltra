@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"strconv"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"io"
@@ -17,9 +18,6 @@ type Vehicle struct {
 	Position []float64 `json:"position"`
 	Range    int64     `json:"range"`
 }
-
-// This is just available for Barcelona
-const maxMeters = 70000
 
 var (
 	baseURL          = "http://ecooltra.arnaugarcia.com"
@@ -60,12 +58,11 @@ func Ping(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "Pong\n")
 }
 
-func groupBy(vehicles []Vehicle) []Vehicle {
+func groupBy(vehicles []Vehicle, maxMeters, threshold int64) []Vehicle {
 	var result []Vehicle
 	// TODO: this is just for critical status only, should be more dynamic status.
 	for _, vehicle := range vehicles {
-		// critical is interpreted as the 25% of the total.
-		if vehicle.Range <= int64(maxMeters/4) {
+		if vehicle.Range <= int64(maxMeters/threshold) {
 			result = append(result, vehicle)
 		}
 	}
@@ -74,13 +71,40 @@ func groupBy(vehicles []Vehicle) []Vehicle {
 
 type Data struct {
 	Results []Vehicle `json:"results"`
+	Total int `json:"total"`
 }
 
 // Vehicles nothing special, yet.
 func Vehicles(w http.ResponseWriter, req *http.Request) {
+	var (
+		maxMeters int64 = 70000
+		threshold int64 = 1
+	)
 	if req.Method != http.MethodGet {
 		http.Error(w, "This method it's not supported.", http.StatusMethodNotAllowed)
 		return
+	}
+	fullRange, ok := req.URL.Query()["maxMeters"]
+	if ok {
+		fullRangeInt, err := strconv.Atoi(fullRange[0])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		maxMeters = int64(fullRangeInt)
+	}
+	thresh, ok := req.URL.Query()["threshold"]
+	if ok {
+		threshInt, err := strconv.Atoi(thresh[0])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if threshInt <= 0  {
+			http.Error(w, "threshold should be a positive integer.", http.StatusInternalServerError)
+			return
+		}
+		threshold = int64(threshInt)
 	}
 	cli := &http.Client{}
 	u, err := url.Parse(baseURL)
@@ -108,9 +132,10 @@ func Vehicles(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// vehiclesGroup := groupBy(vehicles)
+	vehiclesGroup := groupBy(vehicles, maxMeters, threshold)
 	results := Data{
-		Results: vehicles,
+		Results: vehiclesGroup,
+		Total: len(vehiclesGroup),
 	}
 	b, err := json.Marshal(results)
 	if err != nil {
